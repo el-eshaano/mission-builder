@@ -195,9 +195,7 @@ let saveMission = () => {
             'maximum_altitude': 650,
             'boundary_points': points['boundary']
         },
-        'search_zone': {
-            'boundary_points': points['coverage']
-        },
+        'search_zone': {},
         'air_drop_positions': points['airdrop']
     }
 
