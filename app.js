@@ -183,19 +183,20 @@ let saveMission = () => {
         },
         'search_zone': {
             'boundary_points': points['coverage']
-        }
+        },
+        'air_drop_positions': []
     }
     let mission2 = {
         'land_position': points['land'],
         'amsl': 240,
         'air_drop_height': 340,
-        'waypoints': null,
+        'waypoints': [],
         'fly_zone': {
             'minimum_altitude': 250,
             'maximum_altitude': 650,
             'boundary_points': points['boundary']
         },
-        'search_zone': {},
+        'search_zone': [],
         'air_drop_positions': points['airdrop']
     }
 
