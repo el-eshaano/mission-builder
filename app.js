@@ -164,7 +164,7 @@ map.on('click', (event) => {
 
 let saveMission = () => {
     // let mission_name = document.getElementById('mission-name').value;
-    let mission_name = 'mission1';
+    let mission_name = prompt('Enter mission name');
 
     // if(mission_name == ''){
         // alert('Please enter a mission name');
