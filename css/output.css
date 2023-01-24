@@ -1479,7 +1479,7 @@ html{
   align-items: right;
   display: flex;
   flex-direction: column;
-  margin: 50px 50px 0 50px;
+  margin: 6.20vh 3.26vw 0 3.26vw;
 }
 
 #btn-wrapper {
@@ -1495,41 +1495,42 @@ html{
 
 #point-wrapper {
   display: grid;
-  /* 3 columns of width 150 */
-  grid-template-columns: 135px 135px 135px;
+  grid-template-columns: 8.79vw 8.79vw 8.79vw;
 }
 
 #map {
   width: 100%;
-  height: 600px;
+  height: 75vh;
 }
 
 .map-button {
-  width: 120px;
-  height: 45px;
+  width: 7.8125vw;
+  height: 5.58vh;
   font-family: var(--karla);
   font-size: 1em;
-  margin: 15px 15px 0 0;
+  font-size: 1.04vw;
+  margin: 1.86vh 0.89vw 0 0;
   outline: none;
   border-width: 3px;
 }
 
 .btn-accent {
-  width: 120px;
-  height: 45px;
+  width: 7.8125vw;
+  height: 5.58vh;
   font-family: var(--karla);
   font-size: 1em;
+  font-size: 1.04vw;
   font-weight: 800;
   outline: none;
   border-width: 3px;
 }
 
 #clear {
-  margin: 15px 15px 0 0;
+  margin: 1.86vh 0.89vw 0 0;
 }
 
 #save {
-  margin: 15px 0 0 0;
+  margin: 1.86vh 0 0 0;
 }
 
 /* Popup from leaflet.js */
@@ -1537,6 +1538,7 @@ html{
 .popup{
   font-family: var(--karla);
   font-size: 1em;
+  font-size: 1.04vw;
   font-weight: 600;
   color: var(--green);
 }
@@ -1544,6 +1546,7 @@ html{
 .alt-input{
   font-family: var(--karla);
   font-size: 1em;
+  font-size: 1.04vw;
   font-weight: 600;
   outline: none;
 }
