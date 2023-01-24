@@ -172,6 +172,7 @@ let saveMission = () => {
     // }
 
     let mission1 = {
+
         'land_position': points['land'],
         'amsl': 240,
         'air_drop_height': 340,
@@ -184,7 +185,8 @@ let saveMission = () => {
         'search_zone': {
             'boundary_points': points['coverage']
         },
-        'air_drop_positions': []
+        'air_drop_positions': [],
+        'obstacles' : []
     }
     let mission2 = {
         'land_position': points['land'],
@@ -196,8 +198,11 @@ let saveMission = () => {
             'maximum_altitude': 650,
             'boundary_points': points['boundary']
         },
-        'search_zone': [],
-        'air_drop_positions': points['airdrop']
+        'search_zone': {
+            'boundary_points': []
+        },
+        'air_drop_positions': points['airdrop'],
+        'obstacles': []
     }
 
     // Save both as YAML in the missions folder
