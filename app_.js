@@ -40,33 +40,65 @@ class LatLon {
 class MapPoint extends LatLon {
     constructor(mode, lat, lon, alt) {
 
-        console.log(mode);
         super(lat, lon);
         this.mode = mode;
         if(alt !== undefined) this.alt = alt;
-        this.marker = L.marker([lat, lon], {icon: mode.icon, title: mode.title});
+        this.marker = L.marker([lat, lon], {icon: mode.icon, title: mode.getTitle(), draggable: true});
         this.marker
-            .bindPopup(this.popupContent())
-            // .on('click', this.onClick.bind(this))
-            .on('move', this.onMove.bind(this))
+            .bindPopup(this.popupContent(), {className: 'popup'})
+            .addEventListener('moveend', this.onMoveEnd.bind(this))
+            .addEventListener('drag', this.onDrag.bind(this))
             .addTo(map);
+
     }
 
     popupContent() {
-        let content = '${this.mode.getTitle()} <br> ${this.displayCoords()}';
-        if (this.alt !== undefined) content += `<p>Altitude: ${this.alt}m</p>`;
+        let content = `${this.mode.getTitle()} <br> ${this.displayCoords()}`;
+
+        // Add input field for altitude if mode is waypoint
+        if (this.mode.name === 'Waypoint') {
+            content += `<input type="number" class="alt-input" name="alt" value="${this.alt}">`;
+        }
+
+        // Add event listener for altitude input
+        let alt_inputs = document.getElementsByClassName('alt-input');
+        for (let i = 0; i < alt_inputs.length; i++) {
+            alt_inputs[i].addEventListener('change', (e) => {
+                this.alt = e.target.value;
+                this.popupContent();
+
+                console.log(this.alt);
+            });
+        }
+
         return content;
     }
 
-    onMove(e) {
-        this.lat = e.latlng.lat;
-        this.lon = e.latlng.lng;
+    onDrag() {
+        this.lat = this.marker.getLatLng().lat;
+        this.lon = this.marker.getLatLng().lng;
+        this.mode.renderPoints();
+    }
 
+
+    onMoveEnd() {
+
+        console.log('move end');
+
+        // Update coordinates
+        this.lat = this.marker.getLatLng().lat;
+        this.lon = this.marker.getLatLng().lng;
         this.marker.setPopupContent(this.popupContent());
+        this.mode.renderPoints();
     }
 
     displayCoords() {
         return `${this.lat.toFixed(6)}, ${this.lon.toFixed(6)}`;
+    }
+
+    asArray() {
+        if(this.alt !== undefined) return [this.lat, this.lon, this.alt];
+        else return [this.lat, this.lon];
     }
 }
 
@@ -93,7 +125,7 @@ class Mode {
     }
 
     getTitle() {
-        if(this.multiple) return '${this.name} ${this.idx}';
+        if(this.multiple) return `${this.name} ${this.idx}`;
         else return this.name;
     }
 
@@ -143,6 +175,9 @@ class Mode {
     }
 
     clear() {
+
+        if (this.points === undefined) return;
+
         if (this.render !== undefined) {
             map.removeLayer(this.render);
             this.render = undefined;
@@ -171,7 +206,9 @@ let modes = {
 let currentMode = modes['waypt'];
 
 map.on('click', (e) => {
-    currentMode.addPoint(e.latlng.lat, e.latlng.lng);
+
+    if (currentMode.name === 'Waypoint') currentMode.addPoint(e.latlng.lat, e.latlng.lng, 90);
+    else currentMode.addPoint(e.latlng.lat, e.latlng.lng);
     currentMode.renderPoints();
 });
 
