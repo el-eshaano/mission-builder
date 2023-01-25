@@ -103,3 +103,13 @@ html{
     font-weight: 600;
     outline: none;
 }
+
+.marker-child {
+    width: 35px;
+    height: 35px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+}
