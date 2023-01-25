@@ -1,11 +1,14 @@
+//  ██████╗ ██╗      ██████╗ ██████╗  █████╗ ██╗     ███████╗
+// ██╔════╝ ██║     ██╔═══██╗██╔══██╗██╔══██╗██║     ██╔════╝
+// ██║  ███╗██║     ██║   ██║██████╔╝███████║██║     ███████╗
+// ██║   ██║██║     ██║   ██║██╔══██╗██╔══██║██║     ╚════██║
+// ╚██████╔╝███████╗╚██████╔╝██████╔╝██║  ██║███████╗███████║
+//  ╚═════╝ ╚══════╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝
+
 let mapOptions = {
     center:[13.347674039927663, 74.79216992855073],
     zoom: 18
 }
-
-let lat = '';
-let lon = '';
-
 let map = new L.map('map' , mapOptions);
 
 let googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
@@ -14,155 +17,323 @@ let googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
 });
 map.addLayer(googleSat);
 
-let curr_waypt_idx = 0;
 
-// Custom Waypoint Icons
-let waypt_icon = L.icon({
-    iconUrl: 'assets/waypt.png',
-    iconSize: [25,25],
-    iconAnchor: [12.5, 12.5],
-    popupAnchor: [0, -25]
-});
-let boundary_icon = L.icon({
-    iconUrl: 'assets/boundary.png',
-    iconSize: [25,25],
-    iconAnchor: [12.5, 12.5],
-    popupAnchor: [0, -25]
-});
-let airdrop_icon = L.icon({
-    iconUrl: 'assets/airdrop.png',
-    iconSize: [25,25],
-    iconAnchor: [12.5, 12.5],
-    popupAnchor: [0, -25]
-});
-let coverage_icon = L.icon({
-    iconUrl: 'assets/coverage.png',
-    iconSize: [25,25],
-    iconAnchor: [12.5, 12.5],
-    popupAnchor: [0, -25]
-});
-let land_icon = L.icon({
-    iconUrl: 'assets/land.png',
-    iconSize: [25,25],
-    iconAnchor: [12.5, 12.5],
-    popupAnchor: [0, -25]
-});
+                        
+//  ██████╗██╗      █████╗ ███████╗███████╗███████╗███████╗
+// ██╔════╝██║     ██╔══██╗██╔════╝██╔════╝██╔════╝██╔════╝
+// ██║     ██║     ███████║███████╗███████╗█████╗  ███████╗
+// ██║     ██║     ██╔══██║╚════██║╚════██║██╔══╝  ╚════██║
+// ╚██████╗███████╗██║  ██║███████║███████║███████╗███████║
+//  ╚═════╝╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝╚══════╝
+                                                        
+class LatLon {
+  constructor(lat, lon) {
+    this.lat = lat;
+    this.lon = lon;
+  }
 
-let mode = 'waypt';
-
-let points = {
-    'waypt' : [],
-    'boundary' : [],
-    'coverage' : [],
-    'airdrop' : [],
-    'land': []
-}
-let icons = {
-    'waypt' : waypt_icon,
-    'boundary' : boundary_icon,
-    'coverage' : coverage_icon,
-    'airdrop' : airdrop_icon,
-    'land': land_icon
-}
-markers = [];
-
-renderLines = () => {
-    // Remove previous lines
-    map.eachLayer(layer => {
-        if(layer instanceof L.Polygon){
-            map.removeLayer(layer);
-        }
-        else if(layer instanceof L.Polyline){
-            map.removeLayer(layer);
-        }
-    });
-
-    // Render new lines
-    let waypt_polyline = L.polyline(points['waypt'], {color: '#6b7fd7'}).addTo(map);
-    let boundary_polygon = L.polygon(points['boundary'], {color: '#0b032d'}).addTo(map);
-    let coverage_polygon = L.polygon(points['coverage'], {color: '#f6bd60'}).addTo(map);
-    // map.fitBounds(polygon.getBounds());
+  asArray() {
+    return [this.lat, this.lon];
+  }
 }
 
-let mode_index = {
-    'waypt': 1,
-    'boundary': 1,
-    'airdrop': 1,
-    'coverage': 1,
-    'land': 1
-}
+class MapPoint extends LatLon {
+    constructor(mode, lat, lon, alt) {
 
-map.on('click', (event) => {
+        super(lat, lon);
+        this.mode = mode;
+        if(alt !== undefined) this.alt = alt;
+        this.marker = L.marker([lat, lon], {icon: mode.icon, title: mode.getTitle(), draggable: true});
+        this.marker
+            .bindPopup(this.getNewPopupContent(), {className: 'popup'})
+            .addEventListener('movestart', this.onMoveBegin.bind(this))
+            .addEventListener('moveend', this.onMoveEnd.bind(this))
+            .addEventListener('drag', this.onDrag.bind(this))
+            .addEventListener('mouseover', () => {
+                this.marker.openPopup();
+            })
+            .addEventListener('mouseout', () => {
+                this.marker.closePopup();
+            })
+            .on('wheel', this.onScroll.bind(this))
+            .addTo(map);
 
-    if (mode == 'land') {
-        points[mode] = [event.latlng.lat, event.latlng.lng];
-        // Move the marker if it already exists
-        for(let i = 0; i < markers.length; i++){
-            if(markers[i].options.title.includes('land')){
-                markers[i].setLatLng([event.latlng.lat, event.latlng.lng]);
-                markers[i].bindPopup(`
-                    ${markers[i].options.title} , <br>
-                    ${Math.round(event.latlng.lat * 1000000) / 1000000}, ${Math.round(event.latlng.lng * 1000000) / 1000000}
-                `);
-                return;
-            }
-        }
-    }
-    else{
-        points[mode].push(mode == 'waypt' ? [event.latlng.lat, event.latlng.lng, 90] : [event.latlng.lat, event.latlng.lng]);
+        // Create a div child to the marker with class 'marker-child'
+        let marker_child = document.createElement('div');
+        marker_child.className = 'marker-child';
+        this.marker._icon.appendChild(marker_child);
+
+        // Add event listener for mousewheel
+        this.marker._icon.addEventListener('mousewheel', this.onScroll.bind(this));
+
     }
 
-    markers.push(
-        L.marker(
-            [event.latlng.lat , event.latlng.lng], 
-            {
-                icon: icons[mode],
-                title: `${mode} ${mode_index[mode]}`,
-                draggable: true
-            },
-        ).addTo(map)
-        .bindPopup(`
-            ${mode} ${mode == 'land' ? mode_index[mode] : mode_index[mode]++} , <br>
-            ${Math.round(event.latlng.lat * 1000000) / 1000000}, ${Math.round(event.latlng.lng * 1000000) / 1000000}
-        `, {closeOnClick: true, className: 'popup'})
-        .addEventListener('move', (event) => {
-            idx = event.target.options.title.split(' ')[1] - 1;
-            if(event.target.options.title.includes('waypt')){
-                points['waypt'][idx] = [event.latlng.lat, event.latlng.lng, points['waypt'][idx][2]];
-                console.log(points['waypt'][idx])
-            }
-            else if(event.target.options.title.includes('boundary')){
-                points['boundary'][idx] = [event.latlng.lat, event.latlng.lng];
-            }
-            else if(event.target.options.title.includes('airdrop')){
-                points['airdrop'][idx] = [event.latlng.lat, event.latlng.lng];
-            }
-            else if(event.target.options.title.includes('coverage')){
-                points['coverage'][idx] = [event.latlng.lat, event.latlng.lng];
-            }
-            else if(event.target.options.title.includes('land')){
-                points['land'] = [event.latlng.lat, event.latlng.lng];
-            }
-            // Update the popup
-            event.target.bindPopup(`
-                ${event.target.options.title} , <br>
-                ${Math.round(event.latlng.lat * 1000000) / 1000000}, ${Math.round(event.latlng.lng * 1000000) / 1000000}
-            `);
+    updatePopupContent() {
+        let content = this.marker.getPopup().getContent();
+        let title = content.split('<br>')[0];
+        let new_coords = `${this.displayCoords()}`;
+        if (this.mode.name === 'Waypoint') {
+            new_coords += `, ${this.alt}`;
+        }
+        let new_content = `${title} <br> ${new_coords}`;
+        return new_content;
+    }
 
-            renderLines();
-        })
-        .addEventListener('click', (event) => {
-            modifyPopups();
-        })
+    getNewPopupContent() {
 
-    );
-    renderLines();
+        let content = `${this.mode.getTitle()} <br> ${this.displayCoords()}`;
+
+        if (this.mode.name === 'Waypoint') {
+            content += `, ${this.alt}`;
+        }
+
+        return content;
+    }
+
+    onMoveBegin() {
+        // Show popup
+        this.marker.openPopup();
+    }
+
+    onDrag() {
+        this.lat = this.marker.getLatLng().lat;
+        this.lon = this.marker.getLatLng().lng;
+        this.marker.setPopupContent(this.updatePopupContent());
+        this.mode.renderPoints();
+    }
+
+
+    onMoveEnd() {
+
+        console.log('move end');
+
+        // Update coordinates
+        this.lat = this.marker.getLatLng().lat;
+        this.lon = this.marker.getLatLng().lng;
+        this.marker.setPopupContent(this.updatePopupContent());
+        this.mode.renderPoints();
+
+        this.marker.closePopup();
+    }
+
+    onScroll(e) {
+
+        // only continue if the mode is waypoint
+        if (this.mode.name !== 'Waypoint') return;
+
+        console.log('scroll');
+
+        e.preventDefault();
+        e.stopPropagation();
+        let delta = e.deltaY;
+        if (delta > 0) {
+            this.alt += 2;
+        }
+        else {
+            this.alt -= 2;
+        }
+        this.marker.setPopupContent(this.updatePopupContent());
+        // Make the marker icon bigger with altitude
+        let new_icon = L.icon({
+            iconUrl: this.mode.icon.options.iconUrl,
+            iconSize: [25 + (this.alt-90)/5, 25 + (this.alt-90)/5],
+            iconAnchor: [12.5 + (this.alt-90)/10, 12.5 + (this.alt-90)/10],
+            popupAnchor: [0, -25 - (this.alt-90)/5]
+        });
+        this.marker.setIcon(new_icon);
+    }
+
+    displayCoords() {
+        return `${this.lat.toFixed(6)}, ${this.lon.toFixed(6)}`;
+    }
+
+    asArray() {
+        if(this.alt !== undefined) return [this.lat, this.lon, this.alt];
+        else return [this.lat, this.lon];
+    }
+}
+
+class Mode {
     
-    lat = event.latlng.lat;
-    lon = event.latlng.lng;
-})
+    constructor(name, icon_path, multiple=true, join=false, fill=false, colour='red') {
+        this.name = name;
+        this.icon = L.icon({
+            iconUrl: icon_path,
+            iconSize: [25,25],
+            iconAnchor: [12.5, 12.5],
+            popupAnchor: [0, -25]
+        });
+        
+        this.multiple = multiple;
+        if (multiple) {
+            this.points = [];
+            this.idx = 1;
+        }
+        this.join = join;
+        this.fill = fill;
+        this.colour = colour;
+        this.render = undefined;
+    }
 
-let saveMission = () => {
+    getTitle() {
+        if(this.multiple) return `${this.name} ${this.idx}`;
+        else return this.name;
+    }
+
+    addPoint(lat, lon, alt) {
+
+        if(!this.multiple) {
+
+            // Remove old point
+            if (this.points !== undefined) {
+                map.removeLayer(this.points.marker);
+                this.points = undefined;
+            }
+
+            // If single point, replace it
+            this.points = new MapPoint(this, lat, lon, alt);
+        }
+        else {
+            // If multiple points, add a new point
+            this.points.push(new MapPoint(this, lat, lon, alt));
+            this.idx++;
+        }
+
+
+    }
+
+    renderPoints() {
+
+        // If render already exists, remove it
+        if (this.render !== undefined) {
+            map.removeLayer(this.render);
+            this.render = undefined;
+        }
+        
+        // If multiple points, render as a polyline or polygon depending on fill
+        if(this.fill) {
+            let coords = [];
+            for (let point of this.points) coords.push(point.asArray());
+            this.render = L.polygon(coords, {color: this.colour})
+            this.render.addTo(map);
+        }
+        else if(this.join) {
+            let coords = [];
+            for (let point of this.points) coords.push(point.asArray());
+            this.render = L.polyline(coords, {color: this.colour})
+            this.render.addTo(map);
+        }
+    }
+
+    clear() {
+
+        if (this.points === undefined) return;
+
+        if (this.render !== undefined) {
+            map.removeLayer(this.render);
+            this.render = undefined;
+        }
+        
+        // Remove all markers
+        if(this.multiple) for (let point of this.points) map.removeLayer(point.marker);
+        else map.removeLayer(this.points.marker);
+
+        if(this.multiple){
+            this.points = [];
+            this.idx = 1;
+        }
+        else this.points = undefined;
+    }
+
+    undo() {
+        if(this.points === undefined) return;
+        if(this.multiple) {
+            map.removeLayer(this.points.pop().marker);
+            this.idx--;
+        }
+        else {
+            map.removeLayer(this.points.marker);
+            this.points = undefined;
+        }
+
+        this.renderPoints();
+    }
+
+    asArray() {
+        if(this.multiple) {
+            let coords = [];
+            for (let point of this.points) coords.push(point.asArray());
+            return coords;
+        }
+        else return this.points.asArray();
+    }
+}
+
+let modes = {
+    'waypt': new Mode('Waypoint', 'assets/waypt.png', multiple=true, join=true, fill=false, colour='#6b7fd7'),
+    'boundary': new Mode('Boundary', 'assets/boundary.png', multiple=true, join=true, fill=true, colour='#0b032d'),
+    'coverage': new Mode('Coverage', 'assets/coverage.png', multiple=true, join=true, fill=true, colour='#f6bd60'),
+    'airdrop': new Mode('Airdrop', 'assets/airdrop.png', multiple=true, join=false, fill=false, colour='orange'),
+    'land': new Mode('Land', 'assets/land.png', multiple=false, join=false, fill=false, colour='purple')
+};
+
+let currentMode = modes['waypt'];
+
+map.on('click', (e) => {
+
+    if (currentMode.name === 'Waypoint') currentMode.addPoint(e.latlng.lat, e.latlng.lng, 90);
+    else currentMode.addPoint(e.latlng.lat, e.latlng.lng);
+    currentMode.renderPoints();
+});
+
+let clearMap = () => {
+    for (let mode of Object.values(modes)) {
+        mode.clear();
+    }
+}
+
+class Button {
+
+    constructor(id){
+        this.button = document.getElementById(id);
+        this.button.addEventListener('click', this.onClick.bind(this));
+    }
+
+    onClick(){}
+}
+
+class LocationButton extends Button {
+
+    constructor(id, coords, zoom) {
+        super(id);
+        this.coords = coords;
+        this.zoom = zoom;
+    }
+
+    onClick() {
+        clearMap();
+        map.setView(this.coords, this.zoom);
+    }
+}
+
+ws_button = new LocationButton('ws', coorsd=[13.347674039927663, 74.79216992855073], zoom=18);
+ground_button = new LocationButton('ground', coords=[13.34320087873921, 74.79388117790224], zoom=17);
+auvsi_button = new LocationButton('auvsi', coords=[38.31543061815121,-76.55054569244386], zoom=15);
+
+class ActionButton extends Button {
+
+    constructor(id, action) {
+        super(id);
+        this.action = action;
+    }
+
+    onClick() {
+        this.action();
+    }
+}
+let clear_button = new ActionButton('clear', clearMap);
+
+let save_button = new ActionButton('save', () => {
     // let mission_name = document.getElementById('mission-name').value;
     let mission_name = prompt('Enter mission name');
 
@@ -173,35 +344,35 @@ let saveMission = () => {
 
     let mission1 = {
 
-        'land_position': points['land'],
+        'land_position': modes['land'].asArray(),
         'amsl': 240,
         'air_drop_height': 340,
-        'waypoints': points['waypt'],
+        'waypoints': modes['waypt'].asArray(),
         'fly_zone': {
             'minimum_altitude': 250,
             'maximum_altitude': 650,
-            'boundary_points': points['boundary']
+            'boundary_points': modes['boundary'].asArray()
         },
         'search_zone': {
-            'boundary_points': points['coverage']
+            'boundary_points': modes['coverage'].asArray()
         },
         'air_drop_positions': [],
         'obstacles' : []
     }
     let mission2 = {
-        'land_position': points['land'],
+        'land_position': modes['land'].asArray(),
         'amsl': 240,
         'air_drop_height': 340,
         'waypoints': [],
         'fly_zone': {
             'minimum_altitude': 250,
             'maximum_altitude': 650,
-            'boundary_points': points['boundary']
+            'boundary_points': modes['boundary'].asArray()
         },
         'search_zone': {
             'boundary_points': []
         },
-        'air_drop_positions': points['airdrop'],
+        'air_drop_positions': modes['airdrop'].asArray(),
         'obstacles': []
     }
 
@@ -216,118 +387,28 @@ let saveMission = () => {
     saveAs(mission1_file, `${mission_name}.yaml`);
     saveAs(mission2_file, `${mission_name}_airdrop.yaml`);
 
-
     clearMap();
 
     console.log("DONE!!");
-}
-
-
-let clearMap = () => {
-    points = {
-        'waypt': [],
-        'boundary': [],
-        'airdrop': [],
-        'coverage': []
-    }
-    markers.forEach(marker => {
-        map.removeLayer(marker);
-    })
-    markers = [];
-
-    map.eachLayer(layer => {
-        if(layer instanceof L.Polygon){
-            map.removeLayer(layer);
-        }
-        if(layer instanceof L.Polyline){
-            map.removeLayer(layer);
-        }
-    })
-
-    mode_index = {
-        'waypt': 1,
-        'boundary': 1,
-        'airdrop': 1,
-        'coverage': 1
-    }
-
-    lat = '';
-    lon = '';
-}
-
-// Button Clicks
-for(let i = 0; i < 5; i++){
-    document.getElementsByClassName('point')[i].addEventListener('click', () => {
-        mode = document.getElementsByClassName('point')[i].id;
-        console.log(mode);
-
-        // Remove btn-outline class from this button and add to all the rest
-        for(let j = 0; j < 5; j++){
-            document.getElementsByClassName('point')[j].classList.remove('btn-outline');
-            if(j != i){
-                document.getElementsByClassName('point')[j].classList.add('btn-outline');
-            }
-        }
-
-    })
-}
-document.getElementById('ws').addEventListener('click', () => {
-    map.setView([13.347674039927663, 74.79216992855073], 18);
-    clearMap();
-})
-document.getElementById('ground').addEventListener('click', () => {
-    map.setView([13.34320087873921, 74.79388117790224], 17);
-    clearMap();
-})
-document.getElementById('auvsi').addEventListener('click', () => {
-    map.setView([38.31543061815121,-76.55054569244386], 15);
-    clearMap();
-})
-document.getElementById('clear').addEventListener('click', clearMap);
-document.getElementById('save').addEventListener('click', saveMission);
-
-// on ctrl+z, remove last marker
-document.addEventListener('keydown', (event) => {
-    if(event.ctrlKey && event.key == 'z'){
-        if(markers.length > 0){
-            map.removeLayer(markers.pop());
-            points[mode].pop();
-            renderLines();
-        }
-    }
 });
 
-// Add an altitude input box to the popup
+let mode_buttons = document.getElementsByClassName('mode-button');
+for (let button of mode_buttons) {
 
-modifyPopups = () => {
-    let popups = document.getElementsByClassName('popup');
-    for(let i = 0; i < popups.length; i++){
+    button.addEventListener('click', () => {
+        currentMode = modes[button.id];
+        console.log(currentMode);
 
-        if(popups[i].innerHTML.includes('Altitude') || !popups[i].innerHTML.includes('waypt')){
-            continue;
+        for(let button2 of mode_buttons){
+            button2.classList.add('btn-outline');
         }
-        // Get marker title
-        let title = popups[i].children[0].children[0].innerHTML.split(' ').filter((str) => str !== '').filter((str) => str !== '\n');
-        let idx = title[1] - 1;
-        let type = title[0];
-        console.log("type: ", type, "idx: ", idx);
-        popups[i].children[0].children[0].innerHTML += `
-            <input type="number" class="alt-input" placeholder="${points[type][idx][2]}" />
-        `;
-    }
-
-    let alt_inputs = document.getElementsByClassName('alt-input');
-    for(let i = 0; i < alt_inputs.length; i++){
-        alt_inputs[i].addEventListener('change', (event) => {
-            let alt = parseInt(event.target.value);
-            let title = event.target.parentElement.innerHTML.split(' ').filter((str) => str !== '').filter((str) => str !== '\n');
-            let idx = title[1] - 1;
-            console.log("title: ", title, "idx: ", idx)
-            if(title.includes('waypt')){
-                points['waypt'][idx][2] = alt;
-            }
-            console.log("CHANGE MADE");
-            console.log(points['waypt']);
-        })
-    }
+        button.classList.remove('btn-outline');
+    });
 }
+
+// ctrl + z to undo
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'z') {
+        currentMode.undo();
+    }
+});
