@@ -1,34 +1,33 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import './App.css'
+import React, {useState} from "react";
+
+import './App.css';
+import { Icon } from "leaflet";
+
+import Map from "./components/Map";
+import Tabs from "./components/Tabs";
+import location_data from "./data/location";
 
 function App() {
-  const [count, setCount] = useState(0)
 
-  return (
-    <div className="App">
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </div>
-  )
+
+	const [location, setLocation] = useState("wkshp");
+	const [mode, setMode] = useState("waypt");
+
+	console.log(location)
+
+	return (
+		<div className="App">
+			<Map center={location_data[location].center} zoom={location_data[location].zoom} />
+			<Tabs tabs={["WAYPT", "CVRG", "BNDRY", "AIRDRP", "LAND"]} 
+				top={58} left={1600}
+				handleClick={setMode}
+			/>
+			<Tabs tabs={location_data.names} 
+				top={130} left={1855}
+				handleClick={setLocation}
+			/>
+		</div>
+	);
 }
 
-export default App
+export default App;
