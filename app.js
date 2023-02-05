@@ -265,7 +265,7 @@ class Mode {
             for (let point of this.points) coords.push(point.asArray());
             return coords;
         }
-        else return this.points.asArray();
+        else if(this.points != undefined) return this.points.asArray();
     }
 }
 
