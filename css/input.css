@@ -32,7 +32,7 @@ html{
     align-items: right;
     display: flex;
     flex-direction: column;
-    margin: 50px 50px 0 50px;
+    margin: 6.1958vh 3.255vw 0 3.255vw; /* 50 px */
 }
 
 #btn-wrapper {
@@ -49,27 +49,27 @@ html{
 #point-wrapper {
     display: grid;
     /* 3 columns of width 150 */
-    grid-template-columns: 135px 135px 135px;
+    grid-template-columns: 8.789vw 8.789vw 8.789vw;
 }
 
 #map {
     width: 100%;
-    height: 600px;
+    height: 74.349vh;
 }
 
 .map-button {
-    width: 120px;
-    height: 45px;
+    width: 7.8125vw;
+    height: 5.5762vh;
     font-family: var(--karla);
     font-size: 1em;
-    margin: 15px 15px 0 0;
+    margin: 1.8587vh 0.9766vw 0 0;
     outline: none;
     border-width: 3px;
 }
 
 .btn-accent {
-    width: 120px;
-    height: 45px;
+    width: 7.8125vw;
+    height: 5.5762vh;
     font-family: var(--karla);
     font-size: 1em;
     font-weight: 800;
@@ -79,11 +79,11 @@ html{
 }
 
 #clear {
-    margin: 15px 15px 0 0;
+    margin: 1.8587vh 0.9766vw 0 0;
 }
 
 #save {
-    margin: 15px 0 0 0;
+    margin: 1.8587vh 0 0 0;
 }
 
 /* Popup from leaflet.js */
@@ -102,8 +102,8 @@ html{
 }
 
 .marker-child {
-    width: 35px;
-    height: 35px;
+    width: 2.2786vw;
+    height: 4.3371vh;
     position: absolute;
     top: 50%;
     left: 50%;
